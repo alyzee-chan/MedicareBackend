@@ -41,8 +41,7 @@ public class MedicareRepository {
                         rs.getString("date"),
                         rs.getString("time"),
                         rs.getString("status"),
-                        rs.getString("reason")
-                ));
+                        rs.getString("reason")));
     }
 
     public AppointmentDto createAppointment(AppointmentRequest request) {
@@ -54,7 +53,8 @@ public class MedicareRepository {
                 """,
                 id, request.patientName(), request.doctorName(), request.specialty(), request.clinic(),
                 request.date(), request.time(), status, request.reason());
-        return new AppointmentDto(id, request.patientName(), request.doctorName(), request.specialty(), request.clinic(), request.date(), request.time(), status, request.reason());
+        return new AppointmentDto(id, request.patientName(), request.doctorName(), request.specialty(),
+                request.clinic(), request.date(), request.time(), status, request.reason());
     }
 
     public List<MedicineDto> findMedicines(String query) {
@@ -71,15 +71,14 @@ public class MedicareRepository {
     }
 
     private List<MedicineDto> queryMedicines(String sql, Object... args) {
-        return jdbcTemplate.query(sql, args, (rs, rowNum) -> new MedicineDto(
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new MedicineDto(
                 rs.getLong("id"),
                 rs.getString("name"),
                 rs.getString("form"),
                 rs.getString("price"),
                 rs.getString("stock"),
                 rs.getString("alternative"),
-                rs.getString("note")
-        ));
+                rs.getString("note")), args);
     }
 
     public List<PharmacyDto> findPharmacies() {
@@ -95,8 +94,7 @@ public class MedicareRepository {
                         rs.getString("distance"),
                         rs.getString("label"),
                         rs.getString("open"),
-                        rs.getString("city")
-                ));
+                        rs.getString("city")));
     }
 
     public List<ProfileDto> findProfiles() {
@@ -109,16 +107,16 @@ public class MedicareRepository {
                         rs.getLong("id"),
                         rs.getString("name"),
                         rs.getString("role"),
-                        rs.getString("tone")
-                ));
+                        rs.getString("tone")));
     }
 
     public List<OrderDto> findOrders() {
-        return jdbcTemplate.query("""
-                select id, order_number, customer_name, medicine_name, quantity, status, payment_method, eta, pharmacy_name, fulfillment_mode
-                from orders
-                order by id desc
-                """,
+        return jdbcTemplate.query(
+                """
+                        select id, order_number, customer_name, medicine_name, quantity, status, payment_method, eta, pharmacy_name, fulfillment_mode
+                        from orders
+                        order by id desc
+                        """,
                 (rs, rowNum) -> new OrderDto(
                         rs.getLong("id"),
                         rs.getString("order_number"),
@@ -129,22 +127,24 @@ public class MedicareRepository {
                         rs.getString("payment_method"),
                         rs.getString("eta"),
                         rs.getString("pharmacy_name"),
-                        rs.getString("fulfillment_mode")
-                ));
+                        rs.getString("fulfillment_mode")));
     }
 
     public OrderDto createOrder(OrderRequest request) {
         long id = Math.abs(UUID.randomUUID().getMostSignificantBits());
-        String orderNumber = "MC-" + LocalDate.now().toString().replace("-", "") + "-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase(Locale.ROOT);
+        String orderNumber = "MC-" + LocalDate.now().toString().replace("-", "") + "-"
+                + UUID.randomUUID().toString().substring(0, 4).toUpperCase(Locale.ROOT);
         String status = "Preparation";
         String eta = "25 min";
-        jdbcTemplate.update("""
-                insert into orders (id, order_number, customer_name, medicine_name, quantity, status, payment_method, eta, pharmacy_name, fulfillment_mode)
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
+        jdbcTemplate.update(
+                """
+                        insert into orders (id, order_number, customer_name, medicine_name, quantity, status, payment_method, eta, pharmacy_name, fulfillment_mode)
+                        values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
                 id, orderNumber, request.customerName(), request.medicineName(), request.quantity(), status,
                 request.paymentMethod(), eta, request.pharmacyName(), request.fulfillmentMode());
-        return new OrderDto(id, orderNumber, request.customerName(), request.medicineName(), request.quantity(), status, request.paymentMethod(), eta, request.pharmacyName(), request.fulfillmentMode());
+        return new OrderDto(id, orderNumber, request.customerName(), request.medicineName(), request.quantity(), status,
+                request.paymentMethod(), eta, request.pharmacyName(), request.fulfillmentMode());
     }
 
     public MedicalRecordDto findMedicalRecord() {
@@ -159,8 +159,7 @@ public class MedicareRepository {
                         splitValues(rs.getString("allergies")),
                         splitValues(rs.getString("treatments")),
                         splitValues(rs.getString("vaccines")),
-                        splitValues(rs.getString("notes"))
-                ));
+                        splitValues(rs.getString("notes"))));
     }
 
     public void saveSosAlert(SosAlertRequest request) {
@@ -169,7 +168,8 @@ public class MedicareRepository {
                 insert into sos_alerts (id, patient_name, age_group, symptom, latitude, longitude, note, created_at)
                 values (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                id, request.patientName(), request.ageGroup(), request.symptom(), request.latitude(), request.longitude(), request.note(), LocalDate.now().toString());
+                id, request.patientName(), request.ageGroup(), request.symptom(), request.latitude(),
+                request.longitude(), request.note(), LocalDate.now().toString());
     }
 
     private List<String> splitValues(String value) {

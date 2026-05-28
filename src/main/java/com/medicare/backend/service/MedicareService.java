@@ -14,7 +14,6 @@ import com.medicare.backend.dto.ProfileDto;
 import com.medicare.backend.dto.SosAlertRequest;
 import com.medicare.backend.dto.SosAlertResponse;
 import com.medicare.backend.repository.MedicareRepository;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import org.springframework.stereotype.Service;
@@ -38,9 +37,9 @@ public class MedicareService {
                 new MetricDto("RDV actifs", String.valueOf(appointments.size())),
                 new MetricDto("Medicaments", String.valueOf(medicines.size())),
                 new MetricDto("Pharmacies", String.valueOf(pharmacies.size())),
-                new MetricDto("Profils", String.valueOf(profiles.size()))
-        );
-        return new DashboardResponse("MediCare+", metrics, appointments, medicines, pharmacies, profiles, medicalRecord);
+                new MetricDto("Profils", String.valueOf(profiles.size())));
+        return new DashboardResponse("MediCare+", metrics, appointments, medicines, pharmacies, profiles,
+                medicalRecord);
     }
 
     public List<AppointmentDto> getAppointments() {
@@ -82,23 +81,21 @@ public class MedicareService {
                     input,
                     "Urgence immediate : appelez les secours et declenchez le mode SOS.",
                     "critique",
-                    List.of("Ne laissez pas la personne seule.", "Activez la geolocalisation.", "Ouvrez la fiche de premiers secours.")
-            );
+                    List.of("Ne laissez pas la personne seule.", "Activez la geolocalisation.",
+                            "Ouvrez la fiche de premiers secours."));
         }
         if (containsAny(normalized, "fievre", "toux", "douleur", "maux", "rhume")) {
             return new AssistantResponse(
                     input,
                     "Consultez un medecin ou un pharmacien, puis surveillez l'evolution.",
                     "moderee",
-                    List.of("Buvez de l'eau.", "Verifiez la dose.", "Demandez un avis si les symptomes persistent.")
-            );
+                    List.of("Buvez de l'eau.", "Verifiez la dose.", "Demandez un avis si les symptomes persistent."));
         }
         return new AssistantResponse(
                 input,
                 "L'app recommande un avis medical ou un questionnaire complementaire.",
                 "info",
-                List.of("Precisez les symptomes.", "Indiquez l'age du patient.", "Partagez une photo si besoin.")
-        );
+                List.of("Precisez les symptomes.", "Indiquez l'age du patient.", "Partagez une photo si besoin."));
     }
 
     public SosAlertResponse raiseSos(SosAlertRequest request) {
@@ -107,8 +104,7 @@ public class MedicareService {
         return new SosAlertResponse(
                 "declenche",
                 "Le SOS a ete enregistre. Les pharmacies proches sont notifiees.",
-                nearby
-        );
+                nearby);
     }
 
     private boolean containsAny(String value, String... keywords) {
