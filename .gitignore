@@ -1,0 +1,8 @@
+.gradle
+build
+medicare.db
+*.log
+gradle-8.14.3
+gradle-9.1.0
+gradle-8.14.3-bin.zip
+gradle-9.1.0-bin.zip
