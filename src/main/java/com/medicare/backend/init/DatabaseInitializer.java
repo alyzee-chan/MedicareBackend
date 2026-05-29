@@ -3,15 +3,18 @@ package com.medicare.backend.init;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
 public class DatabaseInitializer implements ApplicationRunner {
 
     private final JdbcTemplate jdbcTemplate;
+    private final PasswordEncoder passwordEncoder;
 
-    public DatabaseInitializer(JdbcTemplate jdbcTemplate) {
+    public DatabaseInitializer(JdbcTemplate jdbcTemplate, PasswordEncoder passwordEncoder) {
         this.jdbcTemplate = jdbcTemplate;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -21,9 +24,41 @@ public class DatabaseInitializer implements ApplicationRunner {
     }
 
     private void createTables() {
+        // ─── Users ───
+        jdbcTemplate.execute("""
+            create table if not exists users (
+              id integer primary key,
+              email text not null unique,
+              password_hash text not null,
+              full_name text not null,
+              phone text not null,
+              date_of_birth text,
+              blood_group text,
+              role text not null default 'PATIENT',
+              avatar_url text,
+              created_at text not null
+            )
+            """);
+
+        // ─── Family profiles (linked to a user) ───
+        jdbcTemplate.execute("""
+            create table if not exists user_profiles (
+              id integer primary key,
+              user_id integer not null,
+              name text not null,
+              role text not null,
+              age text,
+              blood_group text,
+              avatar_url text,
+              foreign key (user_id) references users(id)
+            )
+            """);
+
+        // ─── Existing tables ───
         jdbcTemplate.execute("""
             create table if not exists appointments (
               id integer primary key,
+              user_id integer not null,
               patient_name text not null,
               doctor_name text not null,
               specialty text not null,
@@ -31,7 +66,8 @@ public class DatabaseInitializer implements ApplicationRunner {
               date text not null,
               time text not null,
               status text not null,
-              reason text
+              reason text,
+              foreign key (user_id) references users(id)
             )
             """);
 
@@ -72,6 +108,7 @@ public class DatabaseInitializer implements ApplicationRunner {
         jdbcTemplate.execute("""
             create table if not exists orders (
               id integer primary key,
+              user_id integer not null,
               order_number text not null,
               customer_name text not null,
               medicine_name text not null,
@@ -80,7 +117,8 @@ public class DatabaseInitializer implements ApplicationRunner {
               payment_method text not null,
               eta text not null,
               pharmacy_name text not null,
-              fulfillment_mode text not null
+              fulfillment_mode text not null,
+              foreign key (user_id) references users(id)
             )
             """);
 
@@ -110,22 +148,44 @@ public class DatabaseInitializer implements ApplicationRunner {
     }
 
     private void seedData() {
+        // ─── Demo user ───
+        if (count("users") == 0) {
+            String hashedPassword = passwordEncoder.encode("Medicare2026!");
+            jdbcTemplate.update("""
+                insert into users (id, email, password_hash, full_name, phone, date_of_birth, blood_group, role, avatar_url, created_at)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                1L, "demo@medicare.cm", hashedPassword, "Sophie Mbarga",
+                "+237 691 234 567", "15/03/2002", "O+", "PATIENT", null, "2026-01-15");
+        }
+
+        // ─── Demo family profiles ───
+        if (count("user_profiles") == 0) {
+            jdbcTemplate.update("insert into user_profiles (id, user_id, name, role, age, blood_group, avatar_url) values (?, ?, ?, ?, ?, ?, ?)",
+                    1L, 1L, "Maman", "Aidant", "52 ans", "A+", null);
+            jdbcTemplate.update("insert into user_profiles (id, user_id, name, role, age, blood_group, avatar_url) values (?, ?, ?, ?, ?, ?, ?)",
+                    2L, 1L, "Papa", "Senior", "58 ans", "O+", null);
+            jdbcTemplate.update("insert into user_profiles (id, user_id, name, role, age, blood_group, avatar_url) values (?, ?, ?, ?, ?, ?, ?)",
+                    3L, 1L, "Ava", "Enfant", "6 ans", "O+", null);
+        }
+
+        // ─── Existing seed data ───
         if (count("appointments") == 0) {
             jdbcTemplate.update("""
-                insert into appointments (id, patient_name, doctor_name, specialty, clinic, date, time, status, reason)
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                insert into appointments (id, user_id, patient_name, doctor_name, specialty, clinic, date, time, status, reason)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                101L, "Sophie", "Dr. Jeanne EVOUNA", "Pediatrie", "Hopital de la Casse", "23 fevrier 2026", "10h00", "Confirme", "Consultation de suivi");
+                101L, 1L, "Sophie", "Dr. Jeanne EVOUNA", "Pediatrie", "Hopital de la Casse", "23 fevrier 2026", "10h00", "Confirmé", "Consultation de suivi");
             jdbcTemplate.update("""
-                insert into appointments (id, patient_name, doctor_name, specialty, clinic, date, time, status, reason)
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                insert into appointments (id, user_id, patient_name, doctor_name, specialty, clinic, date, time, status, reason)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                102L, "Sophie", "Dr. Marc NGO", "Cardiologie", "Teleconsultation", "24 fevrier 2026", "14h30", "En attente", "Bilans et conseils");
+                102L, 1L, "Sophie", "Dr. Marc NGO", "Cardiologie", "Teleconsultation", "24 fevrier 2026", "14h30", "En attente", "Bilans et conseils");
             jdbcTemplate.update("""
-                insert into appointments (id, patient_name, doctor_name, specialty, clinic, date, time, status, reason)
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                insert into appointments (id, user_id, patient_name, doctor_name, specialty, clinic, date, time, status, reason)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                103L, "Ava", "Dr. Aissatou MBEA", "Vaccination", "Centre medical Douala", "27 fevrier 2026", "09h15", "Confirme", "Vaccin de rappel");
+                103L, 1L, "Ava", "Dr. Aissatou MBEA", "Vaccination", "Centre medical Douala", "27 fevrier 2026", "09h15", "Confirmé", "Vaccin de rappel");
         }
 
         if (count("medicines") == 0) {
@@ -183,15 +243,15 @@ public class DatabaseInitializer implements ApplicationRunner {
 
         if (count("orders") == 0) {
             jdbcTemplate.update("""
-                insert into orders (id, order_number, customer_name, medicine_name, quantity, status, payment_method, eta, pharmacy_name, fulfillment_mode)
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                insert into orders (id, user_id, order_number, customer_name, medicine_name, quantity, status, payment_method, eta, pharmacy_name, fulfillment_mode)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                501L, "MC-260223-1", "Sophie", "OBH Combi", 1, "Preparation", "Orange Money", "19 min", "Pharmacie du soleil", "Livraison");
+                501L, 1L, "MC-260223-1", "Sophie", "OBH Combi", 1, "En préparation", "Orange Money", "19 min", "Pharmacie du soleil", "Livraison");
             jdbcTemplate.update("""
-                insert into orders (id, order_number, customer_name, medicine_name, quantity, status, payment_method, eta, pharmacy_name, fulfillment_mode)
-                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                insert into orders (id, user_id, order_number, customer_name, medicine_name, quantity, status, payment_method, eta, pharmacy_name, fulfillment_mode)
+                values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                502L, "MC-260224-2", "Ava", "Paracetamol", 2, "Depart", "MTN MoMo", "32 min", "Pharmacie Centrale", "Retrait");
+                502L, 1L, "MC-260224-2", "Ava", "Paracetamol", 2, "En route", "MTN MoMo", "32 min", "Pharmacie Centrale", "Retrait");
         }
 
         if (count("medical_records") == 0) {

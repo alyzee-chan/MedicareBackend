@@ -27,8 +27,8 @@ public class MedicareService {
         this.repository = repository;
     }
 
-    public DashboardResponse getDashboard() {
-        List<AppointmentDto> appointments = repository.findAppointments().stream().limit(3).toList();
+    public DashboardResponse getDashboard(long userId) {
+        List<AppointmentDto> appointments = repository.findAppointments(userId).stream().limit(3).toList();
         List<MedicineDto> medicines = repository.findMedicines("").stream().limit(3).toList();
         List<PharmacyDto> pharmacies = repository.findPharmacies().stream().limit(3).toList();
         List<ProfileDto> profiles = repository.findProfiles();
@@ -42,12 +42,12 @@ public class MedicareService {
                 medicalRecord);
     }
 
-    public List<AppointmentDto> getAppointments() {
-        return repository.findAppointments();
+    public List<AppointmentDto> getAppointments(long userId) {
+        return repository.findAppointments(userId);
     }
 
-    public AppointmentDto createAppointment(AppointmentRequest request) {
-        return repository.createAppointment(request);
+    public AppointmentDto createAppointment(long userId, AppointmentRequest request) {
+        return repository.createAppointment(userId, request);
     }
 
     public List<MedicineDto> searchMedicines(String query) {
@@ -62,12 +62,12 @@ public class MedicareService {
         return repository.findProfiles();
     }
 
-    public List<OrderDto> getOrders() {
-        return repository.findOrders();
+    public List<OrderDto> getOrders(long userId) {
+        return repository.findOrders(userId);
     }
 
-    public OrderDto createOrder(OrderRequest request) {
-        return repository.createOrder(request);
+    public OrderDto createOrder(long userId, OrderRequest request) {
+        return repository.createOrder(userId, request);
     }
 
     public MedicalRecordDto getMedicalRecord() {
