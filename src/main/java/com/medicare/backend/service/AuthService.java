@@ -15,11 +15,14 @@ public class AuthService {
     private final MedicareRepository repository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final NotificationService notificationService;
 
-    public AuthService(MedicareRepository repository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+    public AuthService(MedicareRepository repository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil,
+            NotificationService notificationService) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.notificationService = notificationService;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -41,7 +44,12 @@ public class AuthService {
                 request.role());
 
         // Build token
-        String token = jwtUtil.generateToken(userId, request.email(), request.role() != null ? request.role() : "PATIENT");
+        String token = jwtUtil.generateToken(userId, request.email(),
+                request.role() != null ? request.role() : "PATIENT");
+
+        // Simulate sending notifications
+        notificationService.sendWelcomeEmail(request.email(), request.fullName());
+        notificationService.sendOtpSms(request.phone(), "1234"); // Mock OTP
 
         return new AuthResponse(
                 token,

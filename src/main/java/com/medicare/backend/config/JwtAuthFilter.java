@@ -23,24 +23,34 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+            HttpServletResponse response,
+            FilterChain filterChain) throws ServletException, IOException {
         String header = request.getHeader("Authorization");
 
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
-            if (jwtUtil.isValid(token)) {
-                long userId = jwtUtil.getUserId(token);
-                String email = jwtUtil.getEmail(token);
-                String role = jwtUtil.parseToken(token).get("role", String.class);
+            try {
+                if (jwtUtil.isValid(token)) {
+                    long userId = jwtUtil.getUserId(token);
+                    String email = jwtUtil.getEmail(token);
+                    String role = jwtUtil.parseToken(token).get("role", String.class);
 
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(
-                                userId,
-                                email,
-                                List.of(new SimpleGrantedAuthority("ROLE_" + (role != null ? role.toUpperCase() : "PATIENT"))));
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                    System.out.println("DEBUG JWT: Valid token for " + email + " [ID: " + userId + "]");
+
+                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                            userId,
+                            email,
+                            List.of(new SimpleGrantedAuthority(
+                                    "ROLE_" + (role != null ? role.toUpperCase() : "PATIENT"))));
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                } else {
+                    System.err.println("DEBUG JWT: Token is INVALID (expired or tampered)");
+                }
+            } catch (Exception e) {
+                System.err.println("DEBUG JWT: Error processing token: " + e.getMessage());
             }
+        } else if (header != null) {
+            System.err.println("DEBUG JWT: Auth header present but invalid format: " + header);
         }
 
         filterChain.doFilter(request, response);
